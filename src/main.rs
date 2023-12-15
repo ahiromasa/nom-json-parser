@@ -99,9 +99,7 @@ fn json_value(input: &str) -> IResult<&str, Json> {
 }
 
 fn json(input: &str) -> IResult<&str, Json> {
-    map(tuple((json_value, alt((eof, multispace1)))), |(json, _)| {
-        json
-    })(input)
+    map(tuple((json_value, eof)), |(json, _)| json)(input)
 }
 
 fn read_json_file(filename: &str) -> Json {
