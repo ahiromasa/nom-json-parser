@@ -1,16 +1,16 @@
 use nom::{
     branch::alt,
-    bytes::complete::tag,
-    character::complete::{alphanumeric1, digit1, multispace0, multispace1},
+    bytes::complete::{tag, take_till},
+    character::complete::{digit1, multispace0},
     combinator::{eof, map},
     error::ParseError,
-    multi::{many0, separated_list0},
+    multi::separated_list0,
     sequence::{delimited, tuple},
     IResult,
 };
 use std::fs;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 enum Json {
     Null,
     Bool(bool),
@@ -35,8 +35,7 @@ fn json_number(input: &str) -> IResult<&str, Json> {
 }
 
 fn string_literal(input: &str) -> IResult<&str, String> {
-    let string = many0(alt((alphanumeric1, multispace1, tag("_"), tag("-")))); // 0-9, a-z, A-Z, _, - only
-    let string = map(string, |v| v.join(""));
+    let string = map(take_till(|c| c == '"'), |s: &str| s.into());
     delimited(tag("\""), string, tag("\""))(input)
 }
 
@@ -65,13 +64,7 @@ fn json_object(input: &str) -> IResult<&str, Json> {
             ),
             ws(tag("}")),
         ),
-        |v| {
-            Json::Object(
-                v.into_iter()
-                    .map(|(k, _, v)| (k.clone(), v.clone()))
-                    .collect(),
-            )
-        },
+        |v| Json::Object(v.into_iter().map(|(k, _, v)| (k, v)).collect()),
     )(input)
 }
 
